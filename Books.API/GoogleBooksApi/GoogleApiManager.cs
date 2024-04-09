@@ -72,14 +72,14 @@ namespace Books.API.GoogleBooksApi
                 else
                 {
                     //Log validation errors
-                    logger.LogAppInfo(output.Message, searchRequest.UserInfo);
+                    logger.LogAppError(searchRequest.UserInfo, errorMessage : output.Message);
                 }
             }
             catch (Exception ex)
             {
                 output.IsSuccess = false;
-                output.Message = "Invalid Response";
-                logger.LogAppError(ex, searchRequest.UserInfo);
+                output.Message = AppConstants.InvalidResponse;
+                logger.LogAppError(searchRequest.UserInfo, ex);
             }
             return output;
         }
@@ -151,7 +151,7 @@ namespace Books.API.GoogleBooksApi
             }
             catch (Exception ex)
             {
-                logger.LogAppError(ex, searchRequest.UserInfo);
+                logger.LogAppError(searchRequest.UserInfo, ex);
             }
         }
     }

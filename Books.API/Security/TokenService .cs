@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using Books.API.Models.DTOs;
 using Books.API.GoogleBooksApi;
 using Books.API.Extensions;
+using Books.API.Constants;
 
 namespace Books.API.Security
 {
@@ -43,8 +44,8 @@ namespace Books.API.Security
             {
                 return _token;
             }
-            _token = await GetNewAccessToken(userName, password, userInfo);
-            return _token;
+
+            return await GetNewAccessToken(userName, password, userInfo);            
         }
 
         public async Task<JwtSecurityToken?> ValidateToken(string token, UserDto userInfo, CancellationToken ct = default(CancellationToken))
@@ -85,8 +86,7 @@ namespace Books.API.Security
             catch (Exception ex)
             {
                 // Logging the exception                
-                logger.LogAppError(ex, userInfo);
-
+                logger.LogAppError(userInfo, ex);
                 return null;
             }
         }
@@ -125,7 +125,9 @@ namespace Books.API.Security
                     return newToken;
                 }                
             }
-
+            
+            // Logging the exception                
+            logger.LogAppError(userInfo, errorMessage : AppConstants.UnauthorizedErrorMessage);
             return null;
         }
     }

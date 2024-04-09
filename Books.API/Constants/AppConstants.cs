@@ -8,6 +8,7 @@
         public const string BadRequestErrorKey = "BadRequest";
         public const string SecurityConfigKey = "Security";
         public const string AllowedOriginsConfigKey = "allowedOrigins";
+        public const string InvalidResponse = "Invalid Response";
         public const int MaxPageSize = 40;
         public const int UserIdMinimumLength = 5;
         public const int SessionIdMinimumLength = 5;

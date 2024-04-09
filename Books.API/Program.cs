@@ -6,9 +6,11 @@ using Books.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Books.API.Services.Repositories;
+using Books.API.ExceptionManager;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddExceptionHandler<ExceptionManager>();
 builder.Services.AddDbContext<BooksDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("BooksConnection"));
@@ -30,10 +32,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.AddSwagger();
 builder.AddAllowedOrigins();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseExceptionHandler(o => { });
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
