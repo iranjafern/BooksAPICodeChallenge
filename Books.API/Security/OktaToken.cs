@@ -17,7 +17,10 @@ namespace Books.API.Security
 
         [JsonProperty(PropertyName = "token_type")]
         public string TokenType { get; set; }
-        
+
+        [JsonProperty(PropertyName = "refresh_token")]
+        public string RefreshToken { get; set; }
+
         public bool IsValidAndNotExpiring
         {
             get

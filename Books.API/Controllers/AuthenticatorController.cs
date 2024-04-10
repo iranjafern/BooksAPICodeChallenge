@@ -19,10 +19,35 @@ namespace Books.API.Controllers
         }
 
         [HttpPost]
+        [Route("authenticate")]
         public async Task<IActionResult> Authenticate([FromBody] ApiCredentials credentials, string userId, string sessionId)
         {            
-            var token = await tokenService.GetToken(credentials.UserName, credentials.Password, userId, sessionId);
+            var token = await tokenService.GetToken(userId, sessionId, credentials.UserName, credentials.Password);
+            var badRequestObjectResult = ValidateToken(token);
 
+            if (badRequestObjectResult == null)
+            {
+                return Ok(token);
+            }
+            return badRequestObjectResult;
+        }
+
+        [HttpPost]
+        [Route("authenticatewithrefreshtoken")]
+        public async Task<IActionResult> AuthenticatewithRefreshtoken(string userId, string sessionId, string refreshToken)
+        {
+            var token = await tokenService.GetTokenwithRefreshToken(userId, sessionId, refreshToken);
+            var badRequestObjectResult = ValidateToken(token);
+
+            if (badRequestObjectResult == null)
+            {
+                return Ok(token);                
+            }
+            return badRequestObjectResult;
+        }
+
+        private BadRequestObjectResult? ValidateToken(OktaToken token)
+        {
             if (token == null || string.IsNullOrEmpty(token.AccessToken))
             {
                 ModelState.AddModelError(AppConstants.UnauthorizedErrorKey, AppConstants.UnauthorizedErrorMessage);
@@ -33,10 +58,7 @@ namespace Books.API.Controllers
 
                 return new BadRequestObjectResult(problemDetail);
             }
-            else
-            {
-                return Ok(token);
-            }
+            return null;
         }
     }
 }

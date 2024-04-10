@@ -5,9 +5,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using Newtonsoft.Json.Linq;
 using Books.API.Models.DTOs;
-using Books.API.GoogleBooksApi;
 using Books.API.Extensions;
 using Books.API.Constants;
 
@@ -32,7 +30,7 @@ namespace Books.API.Security
             this.logger = logger;
         }
 
-        public async Task<OktaToken?> GetToken(string userName, string password, string userId, string sessionId)
+        public async Task<OktaToken?> GetToken(string userId, string sessionId, string userName, string password)
         {
             var userInfo = new UserDto
             {
@@ -45,7 +43,18 @@ namespace Books.API.Security
                 return _token;
             }
 
-            return await GetNewAccessToken(userName, password, userInfo);            
+            return await GetNewAccessToken(userInfo, userName: userName, password: password);            
+        }
+
+        public async Task<OktaToken?> GetTokenwithRefreshToken(string userId, string sessionId, string refreshToken)
+        {
+            var userInfo = new UserDto
+            {
+                UserId = userId,
+                SessionId = sessionId
+            };            
+
+            return await GetNewAccessToken(userInfo, refreshToken: refreshToken);
         }
 
         public async Task<JwtSecurityToken?> ValidateToken(string token, UserDto userInfo, CancellationToken ct = default(CancellationToken))
@@ -91,7 +100,7 @@ namespace Books.API.Security
             }
         }
 
-        private async Task<OktaToken?> GetNewAccessToken(string userName, string password, UserDto userInfo)
+        private async Task<OktaToken?> GetNewAccessToken(UserDto userInfo, string userName = "", string password =  "", string refreshToken = "")
         {
             var client = new HttpClient();
             var clientId = _oktaJwtVerificationOptions.ClientId;
@@ -100,14 +109,21 @@ namespace Books.API.Security
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(clientCreds));
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var postMessage = new Dictionary<string, string>();
 
-            var postMessage = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                { "grant_type", "password" },
-                { "username", userName },
-                { "password", password },
-                { "scope", "openid" }
-            };
+                postMessage.Add("grant_type", "password");
+                postMessage.Add("username", userName);
+                postMessage.Add("password", password);
+                postMessage.Add("scope", "offline_access openid");                
+            }
+            else
+            {
+                postMessage.Add("grant_type", "refresh_token");
+                postMessage.Add("scope", "offline_access openid");
+                postMessage.Add("refresh_token", refreshToken);                
+            }
             
             var request = new HttpRequestMessage(HttpMethod.Post, $"{_oktaJwtVerificationOptions.Issuer}/v1/token")
             {
@@ -121,7 +137,7 @@ namespace Books.API.Security
                 var newToken = JsonConvert.DeserializeObject<OktaToken>(json);
                 if (newToken != null)
                 {
-                    newToken.ExpiresAt = DateTime.UtcNow.AddMinutes(20);
+                    newToken.ExpiresAt = DateTime.UtcNow.AddSeconds(newToken.ExpiresIn);
                     return newToken;
                 }                
             }
