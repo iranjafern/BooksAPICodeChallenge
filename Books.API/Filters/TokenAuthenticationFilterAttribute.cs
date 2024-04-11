@@ -18,6 +18,12 @@ namespace Books.API.Filters
         {
             this.tokenService = tokenService;            
         }
+
+        /// <summary>
+        /// Authorize the requests made to the GetBooks endpoint
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             if (!context.HttpContext.Request.Headers.TryGetValue(AppConstants.Authorization, out var token))

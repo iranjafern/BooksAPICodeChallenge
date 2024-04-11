@@ -13,6 +13,8 @@
         public const string tokenNotFoundInCache = "token not found in cache";
         public const string tokenAddedInCache = "token added to cache";
         public const string tokenRemovedInCache = "token removed from cache";
+        public const string revokedTokensSuccessful = "revoked Tokens successfully";
+        public const string revokedTokensFail = "revoked Tokens failed";
         public const int MaxPageSize = 40;
         public const int UserIdMinimumLength = 5;
         public const int SessionIdMinimumLength = 5;

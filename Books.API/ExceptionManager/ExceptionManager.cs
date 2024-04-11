@@ -11,6 +11,14 @@ namespace Books.API.ExceptionManager
         {
             this.logger = logger;
         }
+
+        /// <summary>
+        /// The global exception handler. All unhandled exceptions will be handler return Status500InternalServerError response
+        /// </summary>
+        /// <param name="httpContext"></param>
+        /// <param name="exception"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
             logger.LogError(exception, $"Exception Occured {exception.Message}");

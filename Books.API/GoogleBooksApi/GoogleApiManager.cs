@@ -45,6 +45,15 @@ namespace Books.API.GoogleBooksApi
             _httpClient = httpClient;
         }
 
+        /// <summary>
+        /// Get the books from the Google books API
+        /// </summary>
+        /// <param name="startIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="query"></param>
+        /// <param name="userId"></param>
+        /// <param name="sessionId"></param>
+        /// <returns></returns>
         public async Task<BookSearchResponse> GetBooksAsync(int startIndex, int pageSize, string query, string userId, string sessionId)
         {
             var output = new BookSearchResponse();
@@ -84,6 +93,11 @@ namespace Books.API.GoogleBooksApi
             return output;
         }
 
+        /// <summary>
+        /// Get the books from the Google books API and write the response to DB for analytics
+        /// </summary>
+        /// <param name="searchRequest"></param>
+        /// <returns></returns>
         public async Task<BookSearchResponse> GetGoogleBooks(BookSearchRequest searchRequest)
         {
             var output = new BookSearchResponse();
@@ -94,7 +108,7 @@ namespace Books.API.GoogleBooksApi
 
             var responseString = await responseMessage.Content.ReadAsStringAsync();
 
-            //Write to a DB table
+            //Write to a DB table for the analytics
             await WriteToBookSearchHistory(searchRequest, responseString);
 
             var rootItem = JsonConvert.DeserializeObject<Root>(responseString);

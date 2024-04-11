@@ -33,6 +33,14 @@ namespace Books.API.Security.OktaTokenService
             this.logger = logger;
         }
 
+        /// <summary>
+        /// Get the acccess and refresh token from Okta 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="sessionId"></param>
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public async Task<OktaToken?> GetToken(string userId, string sessionId, string userName, string password)
         {
             var userInfo = new UserDto
@@ -48,6 +56,13 @@ namespace Books.API.Security.OktaTokenService
             return await GetNewAccessToken(userInfo, userName: userName, password: password);
         }
 
+        /// <summary>
+        /// Get a new access token and refresh token using the existing refresh token
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="sessionId"></param>
+        /// <param name="refreshToken"></param>
+        /// <returns></returns>
         public async Task<OktaToken?> GetTokenwithRefreshToken(string userId, string sessionId, string refreshToken)
         {
             var userInfo = new UserDto
@@ -59,6 +74,14 @@ namespace Books.API.Security.OktaTokenService
             return await GetNewAccessToken(userInfo, refreshToken: refreshToken);
         }
 
+        /// <summary>
+        /// Validate the access token
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="userInfo"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public async Task<JwtSecurityToken?> ValidateToken(string token, UserDto userInfo, CancellationToken ct = default)
         {
             if (string.IsNullOrEmpty(token))
@@ -102,6 +125,32 @@ namespace Books.API.Security.OktaTokenService
             }
         }
 
+        /// <summary>
+        /// Revoke the access and refresh token for the provide refresh token
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="sessionId"></param>
+        /// <param name="refreshToken"></param>
+        /// <returns></returns>
+        public async Task RevokeRefreshAndAccessToken(string userId, string sessionId, string refreshToken)
+        {
+            var userInfo = new UserDto
+            {
+                UserId = userId,
+                SessionId = sessionId
+            };
+            
+            await RevokeTokens(userInfo, refreshToken);
+        }
+
+        /// <summary>
+        /// Get the acccess and refresh token from Okta and add the tokens to the cache
+        /// </summary>
+        /// <param name="userInfo"></param>
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <param name="refreshToken"></param>
+        /// <returns></returns>
         private async Task<OktaToken?> GetNewAccessToken(UserDto userInfo, string userName = "", string password = "", string refreshToken = "")
         {
             var client = new HttpClient();
@@ -144,12 +193,50 @@ namespace Books.API.Security.OktaTokenService
                 }
             }
 
-            // Logging the exception                
+            // Logging the error                
             logger.LogAppError(userInfo, errorMessage: AppConstants.UnauthorizedErrorMessage);
             return null;
         }
 
-        public async Task<OktaToken?> GetTokensFromCache(UserDto userInfo)
+        /// <summary>
+        /// Revoke the access and refresh token for the provide refresh token
+        /// </summary>
+        /// <param name="userInfo"></param>
+        /// <param name="refreshToken"></param>
+        /// <returns></returns>
+        private async Task RevokeTokens(UserDto userInfo, string refreshToken)
+        {
+            var client = new HttpClient();
+            var clientId = _oktaJwtVerificationOptions.ClientId;
+            var clientSecret = _oktaJwtVerificationOptions.ClientSecret;
+            var clientCreds = Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(clientCreds));
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var postMessage = new Dictionary<string, string>();
+
+            postMessage.Add("token", refreshToken);
+            postMessage.Add("token_type_hint", "refresh_token");
+            
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_oktaJwtVerificationOptions.Issuer}/v1/revoke")
+            {
+                Content = new FormUrlEncodedContent(postMessage)
+            };
+
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                logger.LogAppInfo(AppConstants.revokedTokensSuccessful, userInfo);
+
+            // Logging the error
+            logger.LogAppInfo(AppConstants.revokedTokensFail, userInfo);            
+        }
+
+        /// <summary>
+        /// Get tokens from cache
+        /// </summary>
+        /// <param name="userInfo"></param>
+        /// <returns></returns>
+        private async Task<OktaToken?> GetTokensFromCache(UserDto userInfo)
         {
             string cacheKeyAccessToken = string.Concat(userInfo.UserId, userInfo.SessionId, "accesstoken");
             string cacheKeyRefereshToken = string.Concat(userInfo.UserId, userInfo.SessionId, "refreshtoken");
@@ -167,13 +254,20 @@ namespace Books.API.Security.OktaTokenService
             return null;
         }
 
-        public async Task AddTokensToCache(UserDto userInfo, OktaToken newToken)
+        /// <summary>
+        /// Remove the old tokens and add the new tokens to cache
+        /// </summary>
+        /// <param name="userInfo"></param>
+        /// <param name="newToken"></param>
+        /// <returns></returns>
+        private async Task AddTokensToCache(UserDto userInfo, OktaToken newToken)
         {
             string cacheKeyAccessToken = string.Concat(userInfo.UserId, userInfo.SessionId, "accesstoken");
             string cacheKeyRefereshToken = string.Concat(userInfo.UserId, userInfo.SessionId, "refreshtoken");
             var cacheAccessToken = await _cache.GetAsync(cacheKeyAccessToken);
             var cacheRefereshToken = await _cache.GetAsync(cacheKeyRefereshToken);
 
+            //remove the old tokens
             if (cacheAccessToken != null && cacheRefereshToken != null)
             {
                 await _cache.RemoveAsync(cacheKeyAccessToken);

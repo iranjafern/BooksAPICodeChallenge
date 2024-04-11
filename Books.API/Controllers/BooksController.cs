@@ -23,8 +23,10 @@ namespace Books.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetBooks(string userId, string sessionId, string query, int startIndex, int pageSize = AppConstants.MaxPageSize)
         {
+            //Get the books from the google books api
             var response = await googleApiManager.GetBooksAsync(startIndex, pageSize, query, userId, sessionId);
-            
+
+            //if no valid response returned return Status400BadRequest error
             if (response == null || !response.IsSuccess)
             {
                 ModelState.AddModelError(AppConstants.BadRequestErrorKey, (response!=null) ? response.Message: AppConstants.BadRequestErrorKey);

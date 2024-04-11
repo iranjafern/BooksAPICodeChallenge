@@ -13,6 +13,11 @@ namespace Books.API.Services.Repositories
             this.dbContext = dbContext;
         }
 
+        /// <summary>
+        /// Write the book search response to the DB for the analytics
+        /// </summary>
+        /// <param name="bookSearchHistory"></param>
+        /// <returns></returns>
         public async Task CreateAsync(BookSearchHistory bookSearchHistory)
         {
             dbContext.BookSearchHistory.Add(bookSearchHistory);
