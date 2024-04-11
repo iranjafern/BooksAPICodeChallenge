@@ -1,9 +1,8 @@
 ﻿using Books.API.Constants;
-using Books.API.Models.DTOs;
+using Books.API.Models.Responses;
 using Books.API.Security;
+using Books.API.Security.OktaTokenService;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Books.API.Controllers
 {
@@ -11,11 +10,10 @@ namespace Books.API.Controllers
     [ApiController]
     public class AuthenticatorController : ControllerBase
     {
-        private readonly ITokenService tokenService;
-
+        private readonly ITokenService tokenService;        
         public AuthenticatorController(ITokenService tokenService)
         {
-            this.tokenService = tokenService;
+            this.tokenService = tokenService;            
         }
 
         [HttpPost]
@@ -41,7 +39,7 @@ namespace Books.API.Controllers
 
             if (badRequestObjectResult == null)
             {
-                return Ok(token);                
+                return Ok(token);
             }
             return badRequestObjectResult;
         }

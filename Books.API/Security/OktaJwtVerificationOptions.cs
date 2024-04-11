@@ -5,5 +5,6 @@
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
         public string Issuer { get; set; }
+        public int ExpiresInSeconds { get; set; }
     }
 }

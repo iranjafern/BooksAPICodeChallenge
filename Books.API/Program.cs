@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Books.API.Services.Repositories;
 using Books.API.ExceptionManager;
+using Microsoft.Extensions.Caching.Distributed;
+using Books.API.Security.OktaTokenService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +32,7 @@ builder.Services.Configure<GoogleBooksAPI>(builder.Configuration.GetSection("Goo
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddDistributedMemoryCache();
 builder.AddSwagger();
 builder.AddAllowedOrigins();
 var app = builder.Build();
@@ -50,5 +53,15 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var currentTimeUTC = DateTime.UtcNow.ToString();
+    byte[] encodedCurrentTimeUTC = System.Text.Encoding.UTF8.GetBytes(currentTimeUTC);
+    var options = new DistributedCacheEntryOptions()
+        .SetSlidingExpiration(TimeSpan.FromSeconds(20));
+    app.Services.GetService<IDistributedCache>()
+                              .Set("cachedTimeUTC", encodedCurrentTimeUTC, options);
+});
 
 app.Run();

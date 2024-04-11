@@ -1,5 +1,6 @@
 ﻿using Books.API.Controllers;
 using Books.API.Security;
+using Books.API.Security.OktaTokenService;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -43,7 +44,7 @@ namespace Books.Test.Controllers
         {
             var tokenServiceMock = new Mock<ITokenService>();
 
-            var oktaToken = new OktaToken() { AccessToken = "eyJraWQiOiJuSEsybUJqRWxVMm9DMDJXYXM3VG8xQWRTUk", TokenType = "Bearer", Scope = "openid" };
+            var oktaToken = new OktaToken() { AccessToken = "eyJraWQiOiJuSEsybUJqRWxVMm9DMDJXYXM3VG8xQWRTUk" };
 
             tokenServiceMock.Setup(x => x.GetToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()).Result)
                                 .Returns(isSuccess ? oktaToken : null);

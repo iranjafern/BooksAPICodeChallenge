@@ -9,6 +9,10 @@
         public const string SecurityConfigKey = "Security";
         public const string AllowedOriginsConfigKey = "allowedOrigins";
         public const string InvalidResponse = "Invalid Response";
+        public const string tokenFoundInCache = "token found in cache";
+        public const string tokenNotFoundInCache = "token not found in cache";
+        public const string tokenAddedInCache = "token added to cache";
+        public const string tokenRemovedInCache = "token removed from cache";
         public const int MaxPageSize = 40;
         public const int UserIdMinimumLength = 5;
         public const int SessionIdMinimumLength = 5;
